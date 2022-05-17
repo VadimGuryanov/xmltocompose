@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conversion>
+  <applied-converters>
+    <converter id="android-module-to-java-module" />
+    <converter id="android-proguard-options" />
+    <converter id="android-sdk-library" />
+    <converter id="groovy-modules-to-facets" />
+    <converter id="groovy-script-run-configurations" />
+    <converter id="junit-to-android-junit-configurations" />
+    <converter id="kotlin-non-jvm-source-roots" />
+  </applied-converters>
+  <project-files>
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\codeStyles\Project.xml" timestamp="1651185802285" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\codeStyles\codeStyleConfig.xml" timestamp="1651185802357" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\kotlinc.xml" timestamp="1651185802197" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\libraries\KotlinJavaRuntime.xml" timestamp="1651185802429" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\misc.xml" timestamp="1651185802061" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\modules.xml" timestamp="1651185802109" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\.idea\workspace.xml" timestamp="1651191957971" />
+    <file path="C:\Users\Vadim\IdeaProjects\untitled1\untitled1.iml" timestamp="1651185801917" />
+  </project-files>
+</conversion>
+

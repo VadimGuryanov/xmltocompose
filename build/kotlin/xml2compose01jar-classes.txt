@@ -1,0 +1,1 @@
+D:\xml2compose\build\classes\kotlin\main\actions\MyAction.class;D:\xml2compose\build\classes\kotlin\main\windows\FilesScreen.class;D:\xml2compose\build\classes\kotlin\main\windows\FilesScreenFactory.class

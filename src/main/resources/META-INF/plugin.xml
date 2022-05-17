@@ -1,0 +1,26 @@
+<idea-plugin>
+    <id>xml.to.compose.xml2compose</id>
+    <name>SDK: XML to Compose</name>
+    <vendor email="gvadimmonstors3@gmail.com">KFU ITIS</vendor>
+
+    <description><![CDATA[
+      This plugin for generate jetpack compose view from xml files
+    ]]></description>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="Sample Window" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+                    factoryClass="plugin.actions.windows.FilesScreenFactory"/>
+    </extensions>
+
+    <actions>
+        <group id="MyPlugin.TopMenu"
+               text="_XML to _Compose"
+               description="Need choose files for generate jetpack compose views">
+            <add-to-group group-id="ToolsMenu"  anchor="last"/>
+            <action id="plugin-ui.actions.MyAction"
+                    class="plugin.actions.MyAction"
+                    text="_MyAction"
+                    description="plugin-ui.actions.MyAction"/>
+        </group>
+    </actions>
+</idea-plugin>
