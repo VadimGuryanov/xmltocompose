@@ -9,7 +9,7 @@ class FilesScreen(toolWindow: ToolWindow) {
 
     val content: JPanel = JPanel()
 
-    init {
-        PsiDocumentManager.getInstance(project)
-    }
+//    init {
+//        PsiDocumentManager.getInstance(project)
+//    }
 }

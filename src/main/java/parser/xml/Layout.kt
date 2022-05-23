@@ -7,7 +7,7 @@ import org.xmlpull.v1.XmlPullParser.START_DOCUMENT
 import org.xmlpull.v1.XmlPullParser.START_TAG
 import org.xmlpull.v1.XmlPullParser.END_DOCUMENT
 
-internal fun XmlPullParser.layout(): Layout {
+fun XmlPullParser.layout(): Layout {
     val children = mutableListOf<Node>()
 
     var event = eventType

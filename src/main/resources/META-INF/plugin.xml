@@ -3,24 +3,32 @@
     <name>SDK: XML to Compose</name>
     <vendor email="gvadimmonstors3@gmail.com">KFU ITIS</vendor>
 
+    <depends>org.jetbrains.android</depends>
+
     <description><![CDATA[
       This plugin for generate jetpack compose view from xml files
     ]]></description>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Sample Window" secondary="true" icon="AllIcons.General.Modified" anchor="right"
-                    factoryClass="plugin.actions.windows.FilesScreenFactory"/>
+        <!-- Add your extensions here -->
     </extensions>
 
     <actions>
-        <group id="MyPlugin.TopMenu"
-               text="_XML to _Compose"
-               description="Need choose files for generate jetpack compose views">
-            <add-to-group group-id="ToolsMenu"  anchor="last"/>
-            <action id="plugin-ui.actions.MyAction"
-                    class="plugin.actions.MyAction"
-                    text="_MyAction"
-                    description="plugin-ui.actions.MyAction"/>
-        </group>
+<!--        <group id="MyPlugin.TopMenu"-->
+<!--               text="_XML to _Compose"-->
+<!--               description="Need choose files for generate jetpack compose views">-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="last"/>-->
+<!--            <action id="plugin-ui.actions.MyAction"-->
+<!--                    class="plugin.actions.MyAction"-->
+<!--                    text="_MyAction"-->
+<!--                    description="plugin-ui.actions.MyAction"/>-->
+<!--        </group>-->
+        <action
+            id="plugin-ui.actions.MyAction"
+            class="plugin.actions.MyAction"
+            text="_MyAction"
+            description="Action for start migrate">
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl T" second-keystroke="ctrl T"/>
+        </action>
     </actions>
 </idea-plugin>

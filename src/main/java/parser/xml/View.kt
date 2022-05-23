@@ -2,51 +2,55 @@ package parser.xml
 
 import ast.Node
 import ast.attributes.ViewAttributes
+import ast.values.LayoutSize
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParser.START_TAG
-import parser.xml.view.textView
+import parser.xml.values.constraints
+import parser.xml.values.drawable
+import parser.xml.values.layoutSize
+import parser.xml.values.padding
+import parser.xml.view.*
+import parser.xml.viewgroup.*
 
-internal fun XmlPullParser.node(): Node {
+fun XmlPullParser.node(): Node {
     require(START_TAG, null, null)
 
     return when (name) {
         // ViewGroupNode
-//        "LinearLayout" -> linearLayout()
-//        "FrameLayout" -> frameLayout()
+        "LinearLayout" -> linearLayout()
+        "FrameLayout" -> frameLayout()
 
         // ViewNode
-//        "View" -> view()
+        "View" -> view()
         "TextView" -> textView()
-//        "ImageView" -> imageView()
-//        "Button" -> button()
-//        "CheckBox" -> checkBox()
-//        "RadioButton" -> radioButton()
-//        "EditText" -> editText()
-//        "Switch" -> switch()
+        "ImageView" -> imageView()
+        "Button" -> button()
+        "CheckBox" -> checkBox()
+        "RadioButton" -> radioButton()
+        "EditText" -> editText()
+        "Switch" -> switch()
 
         // AndroidX
-//        "androidx.constraintlayout.widget.ConstraintLayout" -> constraintLayout()
-//        "androidx.cardview.widget.CardView",
-//        "com.google.android.material.card.MaterialCardView" -> cardView()
+        "androidx.constraintlayout.widget.ConstraintLayout" -> constraintLayout()
+        "androidx.cardview.widget.CardView",
+        "com.google.android.material.card.MaterialCardView" -> cardView()
 
-//        else -> unknown()
-        else -> throw Exception("Cannot parse")
+        else -> unknown()
     }
 }
 
-internal fun XmlPullParser.viewAttributes(): ViewAttributes {
+fun XmlPullParser.viewAttributes(): ViewAttributes {
     return ViewAttributes(
-            id = id()
-//            width = layoutSize("android:layout_width") ?: LayoutSize.WrapContent,
-//            height = layoutSize("android:layout_height") ?: LayoutSize.WrapContent,
-//            background = drawable("android:background"),
-//            padding = padding(),
-//            constraints = constraints()
+            id = id(),
+            width = layoutSize("android:layout_width") ?: LayoutSize.WrapContent,
+            height = layoutSize("android:layout_height") ?: LayoutSize.WrapContent,
+            background = drawable("android:background"),
+            padding = padding(),
+            constraints = constraints()
     )
 }
 
-@Suppress("MagicNumber")
-internal fun XmlPullParser.id(name: String = "android:id"): String? {
+fun XmlPullParser.id(name: String = "android:id"): String? {
     val id = getAttributeValue(null, name) ?: return null
 
     return when {
