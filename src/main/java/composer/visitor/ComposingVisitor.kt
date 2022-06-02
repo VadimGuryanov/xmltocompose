@@ -2,28 +2,24 @@ package composer.visitor
 
 import ast.Layout
 import ast.Visitor
+import ast.navigation.ActionNode
+import ast.navigation.ArgumentNode
+import ast.navigation.FragmentNode
+import ast.navigation.NavigationNode
 import ast.values.Drawable
+import ast.values.LayoutManagerType
 import composer.writer.ComposeWriter
 import ast.values.Orientation
-import ast.view.ButtonNode
-import ast.view.CheckBoxNode
-import ast.view.EditTextNode
-import ast.view.ImageViewNode
-import ast.view.RadioButtonNode
-import ast.view.SwitchNode
-import ast.view.TextViewNode
-import ast.view.ViewNode
-import ast.viewgroup.CardViewNode
-import ast.viewgroup.ConstraintLayoutNode
-import ast.viewgroup.FrameLayoutNode
-import ast.viewgroup.LinearLayoutNode
-import ast.viewgroup.UnknownNode
+import ast.view.*
+import ast.viewgroup.*
 import composer.ext.findChains
 import composer.ext.findRefs
 import composer.writer.CallParameter
 import composer.writer.Modifier
 import composer.writer.ModifierBuilder
 import composer.writer.ParameterValue
+import utils.getMenuName
+import utils.getScreenName
 
 class ComposingVisitor(val fileName: String) : Visitor {
     private val writer = ComposeWriter()
@@ -33,8 +29,17 @@ class ComposingVisitor(val fileName: String) : Visitor {
     }
 
     override fun visitLayout(layout: Layout) {
-        writer.writePreview(fileName)
+        val isNotResourceFile = layout.children.first() !is MenuNode
+        val isNotNavGraphFile = layout.children.first() !is NavigationNode
+        if (isNotResourceFile) {
+            if (isNotNavGraphFile) {
+                writer.writePreview(fileName)
+            } else {
+                writer.writeNavGraphDependence()
+            }
+        }
         layout.children.forEach { view -> view.accept(this) }
+        if (isNotResourceFile && isNotNavGraphFile) writer.writeEnd("}")
     }
 
     override fun visitView(node: ViewNode) {
@@ -291,4 +296,185 @@ class ComposingVisitor(val fileName: String) : Visitor {
             )
         )
     }
+
+    override fun visitRecyclerView(node: RecyclerNode) {
+        val block: (ComposeWriter.() -> Unit)? = if (node.listItem != null) {
+            { writer.writeItemsBlock(node.listItem, node.listItem) }
+        } else {
+            null
+        }
+        val modifier = ModifierBuilder(node)
+        writer.writeFiled("${node.listItem}_list", "emptyList<Unit>()", true)
+        when (node.orientation) {
+            Orientation.Horizontal -> {
+                when(node.layoutManager) {
+                    null, LayoutManagerType.LINEAR -> {
+                        writer.writeCall(
+                            name = "LazyRow",
+                            parameters = listOf(
+                                modifier.toCallParameter()
+                            ),
+                            block = block
+                        )
+                    }
+                    LayoutManagerType.GRID -> {
+                        writer.writeCall(
+                            name = "LazyHorizontalGrid",
+                            parameters = listOf(
+                                modifier.toCallParameter(),
+                                CallParameter(name = "columns", value = ParameterValue.GridColumnsValue(node.spanCount ?: 2))
+                            ),
+                            block = block
+                        )
+                    }
+                }
+            }
+            null, Orientation.Vertical -> {
+                when(node.layoutManager) {
+                    null, LayoutManagerType.LINEAR ->  {
+                        writer.writeCall(
+                            name = "LazyColumn",
+                            parameters = listOf(
+                                modifier.toCallParameter()
+                            ),
+                            block = block
+                        )
+                    }
+                    LayoutManagerType.GRID -> {
+                        writer.writeCall(
+                            name = "LazyVerticalGrid",
+                            parameters = listOf(
+                                modifier.toCallParameter(),
+                                CallParameter(name = "columns", value = ParameterValue.GridColumnsValue(node.spanCount ?: 2))
+                            ),
+                            block = block
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    override fun visitBottomNavView(node: BottomNavNode) {
+        val itemsNameFiled = if (node.menu != null)"${node.menu}_list" else "exampleList"
+        val block: (ComposeWriter.() -> Unit)? = if (node.menu != null) {
+            { writer.writeBottomNavItems(node, itemsNameFiled) }
+        } else {
+            null
+        }
+        val modifier = ModifierBuilder(node)
+        writer.writeFiled(
+            name = itemsNameFiled,
+            block= "get${node.menu?.getMenuName() ?: ""}List()"
+        )
+        writer.writeCall(
+            name = "BottomNavigation",
+            parameters = listOf(
+                modifier.toCallParameter()
+            ),
+            block = block
+        )
+    }
+
+    override fun visitToolbarView(node: ToolbarNode) {
+        val modifier = ModifierBuilder(node)
+
+        val listParams = mutableListOf<CallParameter>()
+        modifier.toCallParameter()?.let {
+            listParams.add(it)
+        }
+        node.view.background?.let {
+            listParams.add(CallParameter(
+                name = "backgroundColor",
+                value = ParameterValue.DrawableValue(it)
+            ))
+        }
+        node.navigationIcon?.let {
+            listParams.add(CallParameter(
+                name = "navigationIcon",
+                value = ParameterValue.IconComposable(
+                    drawable = ParameterValue.DrawableValue(node.navigationIcon),
+                    contentDescription = null
+                )
+            ))
+        }
+        listParams.add(
+            CallParameter(
+                name = "title",
+                value = ParameterValue.TextStringComposable(
+                    text = node.title,
+                    color = node.titleTextColor?.let {
+                        ParameterValue.ColorValue(node.titleTextColor)
+                    }
+                )
+            )
+        )
+        node.menu?.let {
+            val itemsNameFiled = "${it}_list"
+            writer.writeFiled(
+                name = itemsNameFiled,
+                block= "get${it.getMenuName()}List()"
+            )
+
+            listParams.add(
+                CallParameter(
+                    name = "actions",
+                    value = ParameterValue.RawValue(" { } ")
+                )
+            )
+        }
+
+        writer.writeCall(
+            name = "TopAppBar",
+            parameters = listParams
+        )
+    }
+
+    override fun visitMenuItem(node: ItemNode) {
+        val className = fileName.substring(0, fileName.length - 3)
+        val icon = (node.icon as? Drawable.Resource)?.let {
+            "R.drawable.${it.name}"
+        }
+        writer.writeCallItem(name = "object ${node.title?.capitalize()}:  $className($icon, \"${node.title}\")\n", endLine = false)
+    }
+
+    override fun visitMenu(node: MenuNode) {
+        val className = fileName.substring(0, fileName.length - 3)
+        val itemTitles = mutableListOf<String>()
+        writer.writeCall(
+            name = "sealed class $className(var icon: Int, var title: String)") {
+            node.viewGroup.children.forEach {
+                it.accept(this@ComposingVisitor)
+                val item = it as ItemNode
+                item.title?.let {
+                    itemTitles.add(it.capitalize())
+                }
+            }
+        }
+
+        writer.writeFunction("get${className}List", className, itemTitles)
+    }
+
+    override fun visitNavigate(node: NavigationNode) {
+        writer.writeNavigation(node, fileName.substring(0, fileName.length - 3).getScreenName()) {
+            node.viewGroup.children.forEach { view -> view.accept(this@ComposingVisitor) }
+        }
+    }
+
+    override fun visitFragment(node: FragmentNode) {
+        writer.writeFragment(node, fileName.substring(0, fileName.length - 3).getScreenName()) {
+            node.viewGroup.children.forEach { view -> view.accept(this@ComposingVisitor) }
+        }
+    }
+
+    override fun visitAction(node: ActionNode) {
+        writer.writeAction(node) {
+            node.viewGroup.children.forEach { view -> view.accept(this@ComposingVisitor) }
+        }
+    }
+
+    override fun visitArguments(node: ArgumentNode) {
+        writer.writeArgument(node)
+    }
 }
+

@@ -4,6 +4,7 @@ import ast.Node
 import ast.values.LayoutSize
 import ast.values.Padding
 import ast.values.Size
+import ast.view.ToolbarNode
 import composer.ext.getRef
 import composer.ext.hasConstraints
 
@@ -60,15 +61,17 @@ class ModifierBuilder(
             is LayoutSize.MatchParent -> add(Modifier("fillMaxHeight"))
         }
 
-        view.background?.let { drawable ->
-            add(
-                Modifier(
-                    name = "background",
-                    parameters = listOf(
-                        CallParameter(ParameterValue.DrawableValue(drawable))
+        if (node !is ToolbarNode) {
+            view.background?.let { drawable ->
+                add(
+                    Modifier(
+                        name = "background",
+                        parameters = listOf(
+                            CallParameter(ParameterValue.DrawableValue(drawable))
+                        )
                     )
                 )
-            )
+            }
         }
 
         if (view.constraints.hasConstraints()) {

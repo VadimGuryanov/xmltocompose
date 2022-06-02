@@ -1,14 +1,22 @@
 package composer.writer
 
+import ast.ViewGroupNode
+import ast.navigation.ActionNode
+import ast.navigation.ArgumentNode
+import ast.navigation.FragmentNode
+import ast.navigation.NavigationNode
 import ast.values.*
+import ast.view.BottomNavNode
 import composer.ext.getRef
 import composer.model.Chain
+import composer.model.NavigateScreen
 import utils.*
 
 class ComposeWriter {
     private val writer = LineWriter()
 
     fun writePreview(fileName: String) {
+        val name = fileName.substring(0, fileName.length - 3)
         writer.continueLine(
             """
             $IMPORT_COMPOSE_FOUNDATION
@@ -21,17 +29,36 @@ class ComposeWriter {
             $IMPORT_COMPOSE_UI_UNIT
             $IMPORT_COMPOSE_PREVIEW
             $IMPORT_COMPOSE_CONSTRAINT
+            $IMPORT_COMPOSE_UI_LAZY
+            $IMPORT_COMPOSE_UI_LAZY_ITEMS
+            $IMPORT_COMPOSE_UI_REMEMBER
+            $IMPORT_COMPOSE_GRAPHICS
             
-            @Preview
+            @Preview(showBackground = true)
             @Composable
-            fun Preview() {
+            fun Preview$name() {
                 MaterialTheme {
-                   ${fileName.substring(0, fileName.length - 3)}() 
+                   $name() 
                 }
             }
             
             @Composable
-            fun ${fileName.substring(0, fileName.length - 3)}() {
+            fun $name() {
+            """.trimIndent()
+        )
+        writer.endLine()
+    }
+
+    fun writeNavGraphDependence() {
+        writer.continueLine(
+            """
+            $IMPORT_COMPOSE_COMPOSABLE
+            $IMPORT_COMPOSE_NAV_COMPOSABLE
+            $IMPORT_COMPOSE_NAV_HOST
+            $IMPORT_COMPOSE_REMEMBER_NAV
+            $IMPORT_COMPOSE_NAV_ARG
+            $IMPORT_COMPOSE_NAV_TYPE
+          
             """.trimIndent()
         )
         writer.endLine()
@@ -44,10 +71,33 @@ class ComposeWriter {
         endLine: Boolean = true,
         block: (ComposeWriter.() -> Unit)? = null
     ) {
+        writeBlock {
+            writer.startLine("$linePrefix$name")
+
+            writeParameters(parameters, block != null)
+
+            if (block == null) {
+                if (endLine) {
+                    writer.endLine()
+                }
+            } else {
+                writer.endLine(" {")
+                writeBlock(block)
+                writer.startLine("$linePrefix}")
+                if (endLine) {
+                    writer.endLine()
+                }
+            }
+        }
+    }
+
+    fun writeCallItem(
+        name: String,
+        linePrefix: String = "",
+        endLine: Boolean = true,
+        block: (ComposeWriter.() -> Unit)? = null
+    ) {
         writer.startLine("$linePrefix$name")
-
-        writeParameters(parameters, block != null)
-
         if (block == null) {
             if (endLine) {
                 writer.endLine()
@@ -67,6 +117,78 @@ class ComposeWriter {
         writer.continueLine(refs.joinToString(", "))
         writer.endLine(") = createRefs()")
         writer.writeLine()
+    }
+
+    fun writeFiled(name: String, block: String, isRemember: Boolean = false) {
+        writer.startLine("val $name = ")
+        if (isRemember) {
+            writer.continueLine("remember { $block }")
+        } else {
+            writer.continueLine(block)
+        }
+        writer.writeLine()
+    }
+
+    fun writeItemsBlock(nameField: String, itemListFileName: String) {
+        writer.startLine("items(5 /* ${nameField}_list */) {")
+        writer.writeLine()
+        writer.writeLine("\t${itemListFileName.getShortFileName()}()")
+        writer.writeLine()
+        writer.writeLine("}")
+    }
+
+    fun writeBottomNavItems(node: BottomNavNode, itemsName: String) {
+        writer.startLine("$itemsName.forEach { item -> ")
+        writer.writeLine()
+        writeBlock {
+            writer.writeLine("BottomNavigationItem(")
+            writeBlock {
+                val icon = "Icon(painterResource(id = item.icon), contentDescription = item.title${
+                    node.itemIconTint?.let {
+                        when (it) {
+                            is Color.Resource -> {
+                                ", tint = colorResource(id = R.color.${it.name})"
+                            }
+                            is Color.Absolute -> {
+                                ", tint = Color(${it.value})"
+                            }
+                        }
+                    } ?: ""
+                }) },"
+                writer.writeLine("icon = { $icon")
+                if (!node.labelVisibilityMode) {
+                    val label = "label = { Text(text = item.title)" + if (node.itemTextColor != null) {
+                        when (node.itemTextColor) {
+                            is Color.Absolute -> ", color = colorResource(id = R.color.${node.itemTextColor.value}) },"
+                            is Color.Resource -> ", color = Color(${node.itemTextColor.name}) },"
+                        }
+                    } else {
+                        " },"
+                    }
+                    writer.writeLine(label)
+                }
+                val selectedContentColor = when (node.itemTextColor) {
+                    is Color.Resource -> "colorResource(id = R.color.${node.itemTextColor.name})"
+                    is Color.Absolute -> "Color(${node.itemTextColor.value})"
+                    else -> ""
+                }
+                writer.writeLine(
+                    """
+                selectedContentColor = $selectedContentColor,
+                unselectedContentColor = Color.White.copy(0.4f),
+                alwaysShowLabel = ${node.labelVisibilityMode},
+                selected = false,
+                onClick = {
+                    /* Add code later */
+                }"""
+                )
+            }
+            writer.startLine(")")
+        }
+        writer.writeLine()
+
+        writer.writeLine()
+        writer.writeLine("}")
     }
 
     fun writeChains(chains: Set<Chain>) {
@@ -125,6 +247,10 @@ class ComposeWriter {
         writer.continueLine("{ ")
         value.lambda.invoke(this)
         writer.continueLine(" }")
+    }
+
+    private fun writeGridColumns(value: ParameterValue.GridColumnsValue) {
+        writer.continueLine("GridCells.Fixed(${value.columns})")
     }
 
     private fun writeColor(value: ParameterValue.ColorValue) {
@@ -261,7 +387,35 @@ class ComposeWriter {
             is ParameterValue.DrawableValue -> writeDrawable(value)
             is ParameterValue.KeyboardTypeValue -> writeKeyboardType(value)
             is ParameterValue.LambdaValue -> writeLambda(value)
+            is ParameterValue.GridColumnsValue -> writeGridColumns(value)
+            is ParameterValue.TextStringComposable -> writeTextString(value)
+            is ParameterValue.IconComposable -> writeIcon(value)
         }
+    }
+
+    private fun writeTextString(value: ParameterValue.TextStringComposable) {
+        writer.continueLine(" { Text(text = ")
+        if (value.text.contains("@string/")) {
+            writer.continueLine("stringResource(R.string.${value.text.substring(8, value.text.length)}), ")
+        } else {
+            writer.continueLine("${value.text}, ")
+        }
+        writer.continueLine("color = ")
+        value.color?.let { writeColor(it) }
+        writer.writeLine(") }")
+    }
+
+    private fun writeIcon(value: ParameterValue.IconComposable) {
+        writer.continueLine(" { ")
+        writer.continueLine("IconButton(onClick = { /*TODO*/ }) { ")
+        writer.continueLine("Icon(")
+        writer.continueLine("painter = ")
+        writeDrawable(value.drawable)
+        writer.continueLine(", contentDescription = null,")
+        writer.continueLine("tint = Color.Unspecified")
+        writer.continueLine(")")
+        writer.continueLine("}")
+        writer.continueLine("}")
     }
 
     fun writeRelativePositioningConstraint(
@@ -281,6 +435,16 @@ class ComposeWriter {
         }
     }
 
+    fun writeFunction(name: String, fileName: String, itemTitles: List<String>) {
+        writer.writeLine("fun $name(): List<$fileName> = listOf(")
+        writeBlock {
+            itemTitles.forEach {
+                writer.writeLine("$fileName.$it,")
+            }
+        }
+        writer.writeLine(")")
+    }
+
     private fun writeConstraintId(id: Constraints.Id) {
         if (id is Constraints.Id.Parent) {
             writer.continueLine("parent")
@@ -296,6 +460,101 @@ class ComposeWriter {
     }
 
     fun getString(): String {
-        return writer.getString() + "\n}"
+        return writer.getString() + "\n"
+    }
+
+    fun writeEnd(text: String) {
+        writer.writeLine(text)
+    }
+
+
+    fun writeNavigation(node: NavigationNode, fileName: String, block: (ComposeWriter.() -> Unit)?) {
+
+        val list = mutableListOf<NavigateScreen>()
+        node.viewGroup.children.forEach {
+            if (it is FragmentNode) {
+                list.add(
+                    NavigateScreen(id = it.id, name = it.name, label = it.label, layout = it.layout)
+                )
+            }
+        }
+        writeScreen(list, fileName)
+
+        val startDestination = list.first {
+            it.id.substring(5, it.id.length) == node.startDestination.substring(4, node.startDestination.length)
+        }
+
+
+        writer.writeLine("@Composable")
+        writer.writeLine("fun NavGraph() {")
+        writeBlock {
+            writer.writeLine("val navController = rememberNavController()")
+            writer.writeLine("NavHost(navController = navController, startDestination = ${fileName}.${startDestination.label.capitalize()}.route) { ")
+            if (block != null) {
+                writeBlock(block)
+            }
+            writer.writeLine("}")
+        }
+        writer.writeLine("}")
+    }
+
+    fun writeScreen(list: List<NavigateScreen>, fileName: String) {
+        writer.writeLine("sealed class $fileName(val route: String) {")
+        list.forEach {
+            writer.continueLine("\tobject ")
+            writer.continueLine(it.label.capitalize())
+            writer.writeLine(": $fileName(\"${it.id.substring(5, it.id.length)}\")")
+        }
+        writer.writeLine("}")
+    }
+
+    fun writeFragment(node: FragmentNode, filename: String, block: (ComposeWriter.() -> Unit)?) {
+        writer.startLine("composable(route = ")
+        writer.continueLine("$filename.${node.label.capitalize()}.route")
+        if (block != null) {
+            writer.continueLine(", ")
+            writeBlock(block)
+        }
+        node.viewGroup.children.firstOrNull {
+            (it as? ViewGroupNode)?.viewGroup?.children?.isNotEmpty() == true
+        }?.let {
+            writer.startLine(") { ")
+        } ?: run {
+            writer.continueLine(") { ")
+        }
+
+        node.layout?.let {
+            writer.continueLine("${it.getShortFileName()}()")
+        }
+        writer.endLine(" }")
+    }
+
+    fun writeAction(node: ActionNode, block: (ComposeWriter.() -> Unit)) {
+        if (node.viewGroup.children.isNotEmpty()) {
+            writer.writeLine()
+            writer.startLine("arguments = listOf(")
+            writeBlock(block)
+            writer.writeLine(")")
+        }
+    }
+
+    fun writeArgument(node: ArgumentNode) {
+        writer.writeLine()
+        writer.writeLine("navArgument(name = \"${node.name}\") { ")
+        writer.writeBlock {
+            writer.writeLine("type = ${getNavType(node.argType)}")
+            writer.writeLine("defaultValue = \"${node.defaultValue}\"")
+            writer.writeLine("nullable = ${node.nullable}")
+        }
+        writer.writeLine("},")
+    }
+
+    private fun getNavType(type: String): String = when (type) {
+        "string" -> "NavType.StringType"
+        "integer" -> "NavType.IntType"
+        "boolean" -> "NavType.BoolType"
+        "long" -> "NavType.LongType"
+        "float" -> "NavType.FloatType"
+        else -> "NavType.StringType"
     }
 }

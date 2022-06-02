@@ -42,6 +42,20 @@ sealed class ParameterValue {
     class LambdaValue(
         val lambda: ComposeWriter.() -> Unit
     ) : ParameterValue()
+
+    class GridColumnsValue(
+        val columns: Int
+    ) : ParameterValue()
+
+    class TextStringComposable(
+        val text: String,
+        val color: ColorValue?
+    ) : ParameterValue()
+
+    class IconComposable(
+        val drawable: DrawableValue,
+        val contentDescription: String?
+    ) : ParameterValue()
 }
 
 fun createSizeParameterValue(size: Size?): ParameterValue.SizeValue? {

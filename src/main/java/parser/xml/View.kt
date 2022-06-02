@@ -5,6 +5,10 @@ import ast.attributes.ViewAttributes
 import ast.values.LayoutSize
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParser.START_TAG
+import parser.xml.navigation.action
+import parser.xml.navigation.argument
+import parser.xml.navigation.fragment
+import parser.xml.navigation.navigation
 import parser.xml.values.constraints
 import parser.xml.values.drawable
 import parser.xml.values.layoutSize
@@ -34,6 +38,19 @@ fun XmlPullParser.node(): Node {
         "androidx.constraintlayout.widget.ConstraintLayout" -> constraintLayout()
         "androidx.cardview.widget.CardView",
         "com.google.android.material.card.MaterialCardView" -> cardView()
+        "androidx.recyclerview.widget.RecyclerView" -> recyclerView()
+        "com.google.android.material.bottomnavigation.BottomNavigationView" -> bottomNavView()
+        "androidx.appcompat.widget.Toolbar" -> toolbarView()
+
+        //Menu
+        "menu" -> menu()
+        "item" -> item()
+
+        // Navigation
+        "navigation" -> navigation()
+        "fragment" -> fragment()
+        "action" -> action()
+        "argument" -> argument()
 
         else -> unknown()
     }

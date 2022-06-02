@@ -13,7 +13,7 @@ fun XmlPullParser.drawable(name: String): Drawable? {
         value.startsWith("#") -> color(name)?.let { Drawable.ColorValue(it) }
 
         value.startsWith("@color/") -> color(name)?.let {
-            Drawable.ColorValue(Color.Resource(name = value.substring(10)))
+            Drawable.ColorValue(Color.Resource(name = value.substring(7)))
         }
 
         value.startsWith("@drawable/") -> Drawable.Resource(name = value.substring(10))

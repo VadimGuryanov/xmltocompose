@@ -1,5 +1,10 @@
 package ast
 
+import ast.navigation.ActionNode
+import ast.navigation.ArgumentNode
+import ast.navigation.FragmentNode
+import ast.navigation.NavigationNode
+import ast.view.ItemNode
 import ast.view.*
 import ast.viewgroup.*
 
@@ -18,4 +23,14 @@ interface Visitor {
     fun visitConstraintLayout(node: ConstraintLayoutNode)
     fun visitUnknown(node: UnknownNode)
     fun visitSwitch(node: SwitchNode)
+    fun visitRecyclerView(node: RecyclerNode)
+    fun visitBottomNavView(node: BottomNavNode)
+    fun visitToolbarView(node: ToolbarNode)
+    fun visitMenuItem(node: ItemNode)
+    fun visitMenu(node: MenuNode)
+
+    fun visitNavigate(node: NavigationNode)
+    fun visitFragment(node: FragmentNode)
+    fun visitAction(node: ActionNode)
+    fun visitArguments(node: ArgumentNode)
 }
