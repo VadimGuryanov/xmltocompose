@@ -15,6 +15,12 @@ import utils.*
 class ComposeWriter {
     private val writer = LineWriter()
 
+    init {
+        writer.writeLine(IMPORT_PACKAGE)
+        writer.endLine()
+        writer.writeLine(IMPORT_R)
+    }
+
     fun writePreview(fileName: String) {
         val name = fileName.substring(0, fileName.length - 3)
         writer.continueLine(
@@ -47,6 +53,7 @@ class ComposeWriter {
             """.trimIndent()
         )
         writer.endLine()
+        writer.writeBlock {  }
     }
 
     fun writeNavGraphDependence() {
@@ -69,24 +76,27 @@ class ComposeWriter {
         parameters: List<CallParameter?> = emptyList(),
         linePrefix: String = "",
         endLine: Boolean = true,
+        isAddNewLineForParam: Boolean = false,
         block: (ComposeWriter.() -> Unit)? = null
     ) {
-        writeBlock {
+        if (endLine) {
             writer.startLine("$linePrefix$name")
+        } else {
+            writer.continueLine("$linePrefix$name")
+        }
 
-            writeParameters(parameters, block != null)
+        writeParameters(parameters, block != null, isAddNewLineForParam)
 
-            if (block == null) {
-                if (endLine) {
-                    writer.endLine()
-                }
-            } else {
-                writer.endLine(" {")
-                writeBlock(block)
-                writer.startLine("$linePrefix}")
-                if (endLine) {
-                    writer.endLine()
-                }
+        if (block == null) {
+            if (endLine) {
+                writer.endLine()
+            }
+        } else {
+            writer.endLine(" {")
+            writeBlock(block)
+            writer.startLine("$linePrefix}")
+            if (endLine) {
+                writer.endLine()
             }
         }
     }
@@ -130,7 +140,7 @@ class ComposeWriter {
     }
 
     fun writeItemsBlock(nameField: String, itemListFileName: String) {
-        writer.startLine("items(5 /* ${nameField}_list */) {")
+        writer.startLine("items(${nameField}_list) { item ->")
         writer.writeLine()
         writer.writeLine("\t${itemListFileName.getShortFileName()}()")
         writer.writeLine()
@@ -295,7 +305,7 @@ class ComposeWriter {
         }
     }
 
-    private fun writeParameters(parameters: List<CallParameter?>, isFollowedByLambda: Boolean) {
+    private fun writeParameters(parameters: List<CallParameter?>, isFollowedByLambda: Boolean ,isAddNewLine: Boolean = false) {
         if (parameters.isEmpty() && isFollowedByLambda) return
 
         writer.continueLine("(")
@@ -307,7 +317,14 @@ class ComposeWriter {
             }
 
             if (parameter.name != null) {
-                writer.continueLine(parameter.name)
+                if (isAddNewLine) {
+                    writer.writeBlock {
+                        writer.endLine()
+                        writer.startLine(parameter.name)
+                    }
+                } else {
+                    writer.continueLine(parameter.name)
+                }
                 writer.continueLine(" = ")
             }
 
@@ -316,7 +333,12 @@ class ComposeWriter {
             addSeparator = true
         }
 
-        writer.continueLine(")")
+        if (isAddNewLine) {
+            writer.endLine()
+            writer.startLine(")")
+        } else {
+            writer.continueLine(")")
+        }
     }
 
     private fun writeSize(value: ParameterValue.SizeValue) {
@@ -398,24 +420,32 @@ class ComposeWriter {
         if (value.text.contains("@string/")) {
             writer.continueLine("stringResource(R.string.${value.text.substring(8, value.text.length)}), ")
         } else {
-            writer.continueLine("${value.text}, ")
+            writer.continueLine("\"${value.text}\", ")
         }
         writer.continueLine("color = ")
         value.color?.let { writeColor(it) }
-        writer.writeLine(") }")
+        writer.continueLine(") }")
     }
 
     private fun writeIcon(value: ParameterValue.IconComposable) {
-        writer.continueLine(" { ")
-        writer.continueLine("IconButton(onClick = { /*TODO*/ }) { ")
-        writer.continueLine("Icon(")
-        writer.continueLine("painter = ")
-        writeDrawable(value.drawable)
-        writer.continueLine(", contentDescription = null,")
-        writer.continueLine("tint = Color.Unspecified")
-        writer.continueLine(")")
-        writer.continueLine("}")
-        writer.continueLine("}")
+        writer.continueLine(" {")
+        writer.endLine()
+        writer.writeBlock {
+            writer.writeBlock {
+                writer.startLine("IconButton(onClick = { /*TODO*/ }) { ")
+                writer.writeBlock {
+                    writer.endLine()
+                    writer.startLine("Icon(")
+                    writer.continueLine("painter = ")
+                    writeDrawable(value.drawable)
+                    writer.continueLine(", contentDescription = null,")
+                    writer.continueLine("tint = Color.Unspecified")
+                    writer.endLine(")")
+                }
+                writer.writeLine("}")
+            }
+        }
+        writer.startLine("}")
     }
 
     fun writeRelativePositioningConstraint(

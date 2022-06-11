@@ -19,3 +19,7 @@ const val IMPORT_COMPOSE_NAV_COMPOSABLE: String = "import androidx.navigation.co
 const val IMPORT_COMPOSE_REMEMBER_NAV: String = "import androidx.navigation.compose.rememberNavController"
 const val IMPORT_COMPOSE_NAV_ARG: String = "import androidx.navigation.navArgument"
 const val IMPORT_COMPOSE_NAV_TYPE: String = "import androidx.navigation.NavType"
+
+
+const val IMPORT_R: String = "import test.plugin.project.R"
+const val IMPORT_PACKAGE: String = "package test.plugin.project.xml2compose"

@@ -4,6 +4,9 @@ import ast.navigation.ActionNode
 import ast.navigation.ArgumentNode
 import ast.navigation.FragmentNode
 import ast.navigation.NavigationNode
+import ast.theme.ColorNode
+import ast.theme.StyleNode
+import ast.theme.ResourceNode
 import ast.view.ItemNode
 import ast.view.*
 import ast.viewgroup.*
@@ -33,4 +36,9 @@ interface Visitor {
     fun visitFragment(node: FragmentNode)
     fun visitAction(node: ActionNode)
     fun visitArguments(node: ArgumentNode)
+
+    fun visitTheme(light: Layout, night: Layout)
+    fun visitResource(node: ResourceNode)
+    fun visitStyle(node: StyleNode)
+    fun visitColor(node: ColorNode)
 }

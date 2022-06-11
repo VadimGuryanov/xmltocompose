@@ -1,6 +1,6 @@
 package utils
 
-fun String.getMainFolder(): String = "$this/app/src/main/java"
+fun String.getMainFolder(): String = "$this/app/src/main/java/test/plugin/project"
 
 fun String.getResFolder(): String = "$this/app/src/main/res"
 

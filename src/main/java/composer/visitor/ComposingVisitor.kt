@@ -1,28 +1,29 @@
 package composer.visitor
 
 import ast.Layout
+import ast.ViewGroupNode
 import ast.Visitor
 import ast.navigation.ActionNode
 import ast.navigation.ArgumentNode
 import ast.navigation.FragmentNode
 import ast.navigation.NavigationNode
+import ast.theme.ColorNode
+import ast.theme.ResourceNode
+import ast.theme.StyleNode
 import ast.values.Drawable
 import ast.values.LayoutManagerType
-import composer.writer.ComposeWriter
 import ast.values.Orientation
 import ast.view.*
 import ast.viewgroup.*
 import composer.ext.findChains
 import composer.ext.findRefs
-import composer.writer.CallParameter
-import composer.writer.Modifier
-import composer.writer.ModifierBuilder
-import composer.writer.ParameterValue
+import composer.writer.*
 import utils.getMenuName
 import utils.getScreenName
 
 class ComposingVisitor(val fileName: String) : Visitor {
     private val writer = ComposeWriter()
+    private val writerTheme = ComposeThemeWriter()
 
     fun getResult(): String {
         return writer.getString()
@@ -40,6 +41,28 @@ class ComposingVisitor(val fileName: String) : Visitor {
         }
         layout.children.forEach { view -> view.accept(this) }
         if (isNotResourceFile && isNotNavGraphFile) writer.writeEnd("}")
+    }
+
+    override fun visitTheme(light: Layout, night: Layout) {
+        writerTheme.writeThemes(
+            light = (light.children.first() as? ViewGroupNode)?.viewGroup?.children?.first() as? StyleNode,
+            night = (night.children.first() as? ViewGroupNode)?.viewGroup?.children?.first() as? StyleNode
+        )
+
+        light.children.forEach { view -> view.accept(this) }
+        night.children.forEach { view -> view.accept(this) }
+    }
+
+    override fun visitResource(node: ResourceNode) {
+        node.viewGroup.children.forEach { view -> view.accept(this) }
+    }
+
+    override fun visitStyle(node: StyleNode) {
+        writerTheme.writeStyle(node)
+    }
+
+    override fun visitColor(node: ColorNode) {
+        writerTheme.writeColor(node)
     }
 
     override fun visitView(node: ViewNode) {
@@ -238,19 +261,18 @@ class ComposingVisitor(val fileName: String) : Visitor {
     }
 
     override fun visitUnknown(node: UnknownNode) {
-        val block: (ComposeWriter.() -> Unit)? = if (node.viewGroup.children.isEmpty()) {
-            null
-        } else {
-            { node.viewGroup.children.forEach { view -> view.accept(this@ComposingVisitor) } }
-        }
-
-        val modifier = ModifierBuilder(node)
-
+//        val block: (ComposeWriter.() -> Unit)? = if (node.viewGroup.children.isEmpty()) {
+//            null
+//        } else {
+//            { node.viewGroup.children.forEach { view -> view.accept(this@ComposingVisitor) } }
+//        }
+//
+//        val modifier = ModifierBuilder(node)
+//
         writer.writeCall(
             node.name,
-            parameters = listOf(modifier.toCallParameter()),
-            linePrefix = "// ",
-            block = block
+            parameters = listOf(),
+            linePrefix = "// "
         )
     }
 
@@ -304,7 +326,7 @@ class ComposingVisitor(val fileName: String) : Visitor {
             null
         }
         val modifier = ModifierBuilder(node)
-        writer.writeFiled("${node.listItem}_list", "emptyList<Unit>()", true)
+        writer.writeFiled("${node.listItem}_list", "listOf<Unit>(/* inject item list with type */)", true)
         when (node.orientation) {
             Orientation.Horizontal -> {
                 when(node.layoutManager) {
@@ -367,11 +389,23 @@ class ComposingVisitor(val fileName: String) : Visitor {
             name = itemsNameFiled,
             block= "get${node.menu?.getMenuName() ?: ""}List()"
         )
+
+        val parameters = mutableListOf<CallParameter>()
+
+        modifier.toCallParameter()?.let {
+            parameters.add(it)
+        }
+
+        node.view.background?.let {
+            parameters.add(CallParameter(
+                name = "backgroundColor",
+                value = ParameterValue.DrawableValue(it)
+            ))
+        }
+
         writer.writeCall(
             name = "BottomNavigation",
-            parameters = listOf(
-                modifier.toCallParameter()
-            ),
+            parameters = parameters,
             block = block
         )
     }
@@ -426,7 +460,8 @@ class ComposingVisitor(val fileName: String) : Visitor {
 
         writer.writeCall(
             name = "TopAppBar",
-            parameters = listParams
+            parameters = listParams,
+            isAddNewLineForParam = true
         )
     }
 

@@ -28,23 +28,52 @@ class MyAction: AnAction() {
                 FilesRemember.addPath(event.project?.basePath?.getResFolder() ?: throw Exception("file not found"))
                 FilesRemember.addNewFile(absolutePath ?: throw Exception("file not found"))
 
-                while (FilesRemember.isExistFiles) {
-                    val rememberFileName = FilesRemember.getFile()
-                    showMessage("File : $rememberFileName")
-                    LocalFileSystem.getInstance().findFileByPath(rememberFileName)?.let { file ->
-                        val layout = parser.parse(file.inputStream.bufferedReader())
-//                        showMessage("layout : $layout")
-//                        layout.children.forEach {
-//                            showMessage("ViewGroupNode : $it")
-//                            (it as? ViewGroupNode)?.viewGroup?.children?.forEach {
-//                                showMessage("Node : $it")
-//                            }
-//                        }
-                        val fileName = rememberFileName.getFileName()
-//                        showMessage("fileName : $fileName")
-                        val result = composer.compose(layout, fileName)
-                        createFile(event, fileName, result)
-                    } ?: showMessage("Error : $rememberFileName")
+                if (!checkIsResource(absolutePath)) {
+                    while (FilesRemember.isExistFiles) {
+                        val rememberFileName = FilesRemember.getFile()
+                        showMessage("File : $rememberFileName")
+                        LocalFileSystem.getInstance().findFileByPath(rememberFileName)?.let { file ->
+                            if (checkIsResource(rememberFileName)) {
+
+                            }
+                            val layout = parser.parse(file.inputStream.bufferedReader())
+                            val fileName = rememberFileName.getFileName()
+                            val result = composer.compose(layout, fileName)
+                            createFile(event, fileName, result)
+                        } ?: showMessage("Error : $rememberFileName")
+                    }
+                } else {
+
+                    var path: List<String>? = null
+                    if (absolutePath.contains("values/styles")) {
+                        path = absolutePath.split("values")
+                        FilesRemember.addNewFile(path.first() + "values-night" + path.last())
+                    } else {
+                        path = absolutePath.split("values-night")
+                        FilesRemember.addNewFile(path.first() + "values" + path.last())
+                    }
+                    FilesRemember.addNewFile(path.first() + "values/colors.xml")
+
+
+                    val file1 = FilesRemember.getFile()
+                    val file2 = FilesRemember.getFile()
+                    val fileColor = FilesRemember.getFile()
+
+                    LocalFileSystem.getInstance().findFileByPath(FilesRemember.getFile())?.let {
+                        LocalFileSystem.getInstance().findFileByPath(FilesRemember.getFile())?.let { file2 ->
+                            val layout1 = parser.parse(it.inputStream.bufferedReader())
+                            val layout2 = parser.parse(file2.inputStream.bufferedReader())
+
+                            val fileName = file1.getFileName()
+
+                            val result = composer.composeForTheme(layout1, layout2, fileName)
+                        }
+                    }
+
+                    LocalFileSystem.getInstance().findFileByPath(FilesRemember.getFile())?.let {
+                        val layoutColors = parser.parse(it.inputStream.bufferedReader())
+                    }
+
                 }
             } catch (e: Exception) {
                 showMessage("${e.message} ParcerException")
@@ -68,4 +97,7 @@ class MyAction: AnAction() {
     private fun showMessage(str: String) {
         Messages.showMessageDialog(str, "Action", Messages.getInformationIcon())
     }
+
+    private fun checkIsResource(filePath: String): Boolean =
+        filePath.contains("values/styles") || filePath.contains("values-night/styles")
 }

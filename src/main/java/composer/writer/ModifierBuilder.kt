@@ -4,6 +4,7 @@ import ast.Node
 import ast.values.LayoutSize
 import ast.values.Padding
 import ast.values.Size
+import ast.view.BottomNavNode
 import ast.view.ToolbarNode
 import composer.ext.getRef
 import composer.ext.hasConstraints
@@ -61,7 +62,7 @@ class ModifierBuilder(
             is LayoutSize.MatchParent -> add(Modifier("fillMaxHeight"))
         }
 
-        if (node !is ToolbarNode) {
+        if (node !is ToolbarNode && node !is BottomNavNode) {
             view.background?.let { drawable ->
                 add(
                     Modifier(
@@ -78,9 +79,7 @@ class ModifierBuilder(
             addConstraints(node)
         }
 
-//        if (view.padding.hasValues()) {
-            addPadding(view.padding)
-//        }
+        addPadding(view.padding)
     }
 
     private fun addConstraints(node: Node) {

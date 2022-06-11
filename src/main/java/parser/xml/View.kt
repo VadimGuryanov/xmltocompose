@@ -9,6 +9,9 @@ import parser.xml.navigation.action
 import parser.xml.navigation.argument
 import parser.xml.navigation.fragment
 import parser.xml.navigation.navigation
+import parser.xml.theme.colorResource
+import parser.xml.theme.resource
+import parser.xml.theme.style
 import parser.xml.values.constraints
 import parser.xml.values.drawable
 import parser.xml.values.layoutSize
@@ -51,6 +54,11 @@ fun XmlPullParser.node(): Node {
         "fragment" -> fragment()
         "action" -> action()
         "argument" -> argument()
+
+        //Theme
+        "resources" -> resource()
+        "style" -> style()
+        "color" -> colorResource()
 
         else -> unknown()
     }
