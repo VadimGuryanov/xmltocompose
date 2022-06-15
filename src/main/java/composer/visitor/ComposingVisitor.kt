@@ -26,24 +26,38 @@ class ComposingVisitor(val fileName: String) : Visitor {
     private val writerTheme = ComposeThemeWriter()
 
     fun getResult(): String {
-        return writer.getString()
+        val isNotColorsFile = !fileName.contains("Color")
+        return if (isNotColorsFile) {
+            writer.getString()
+        } else {
+            writerTheme.getResultColor()
+        }
     }
+
+    fun getResultTheme(): Map<String, String> = writerTheme.getResult()
 
     override fun visitLayout(layout: Layout) {
         val isNotResourceFile = layout.children.first() !is MenuNode
         val isNotNavGraphFile = layout.children.first() !is NavigationNode
-        if (isNotResourceFile) {
-            if (isNotNavGraphFile) {
-                writer.writePreview(fileName)
-            } else {
-                writer.writeNavGraphDependence()
+        val isNotColorsFile = !fileName.contains("Color")
+        if (isNotColorsFile) {
+            if (isNotResourceFile) {
+                if (isNotNavGraphFile) {
+                    writer.writePreview(fileName)
+                } else {
+                    writer.writeNavGraphDependence()
+                }
             }
+        } else {
+            writerTheme.writeImportsForColor()
         }
         layout.children.forEach { view -> view.accept(this) }
-        if (isNotResourceFile && isNotNavGraphFile) writer.writeEnd("}")
+        if (isNotResourceFile && isNotNavGraphFile && isNotColorsFile) writer.writeEnd("}")
     }
 
     override fun visitTheme(light: Layout, night: Layout) {
+        writerTheme.writeImports(fileName)
+
         writerTheme.writeThemes(
             light = (light.children.first() as? ViewGroupNode)?.viewGroup?.children?.first() as? StyleNode,
             night = (night.children.first() as? ViewGroupNode)?.viewGroup?.children?.first() as? StyleNode
@@ -63,6 +77,10 @@ class ComposingVisitor(val fileName: String) : Visitor {
 
     override fun visitColor(node: ColorNode) {
         writerTheme.writeColor(node)
+    }
+
+    override fun visitStyleItem(node: ItemForStyleNode) {
+
     }
 
     override fun visitView(node: ViewNode) {

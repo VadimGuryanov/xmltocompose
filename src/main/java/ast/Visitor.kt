@@ -41,4 +41,5 @@ interface Visitor {
     fun visitResource(node: ResourceNode)
     fun visitStyle(node: StyleNode)
     fun visitColor(node: ColorNode)
+    fun visitStyleItem(node: ItemForStyleNode)
 }

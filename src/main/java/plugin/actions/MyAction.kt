@@ -9,6 +9,7 @@ import composer.Composer
 import parser.FilesRemember
 import parser.Parser
 import utils.getFileName
+import utils.getFileTheme
 import utils.getMainFolder
 import utils.getResFolder
 import java.io.File
@@ -33,10 +34,8 @@ class MyAction: AnAction() {
                         val rememberFileName = FilesRemember.getFile()
                         showMessage("File : $rememberFileName")
                         LocalFileSystem.getInstance().findFileByPath(rememberFileName)?.let { file ->
-                            if (checkIsResource(rememberFileName)) {
-
-                            }
                             val layout = parser.parse(file.inputStream.bufferedReader())
+                            showMessage("Layout : $layout")
                             val fileName = rememberFileName.getFileName()
                             val result = composer.compose(layout, fileName)
                             createFile(event, fileName, result)
@@ -44,8 +43,11 @@ class MyAction: AnAction() {
                     }
                 } else {
 
+                    FilesRemember.isStyleFoundFile = true
+
+                    showMessage("File : $absolutePath")
                     var path: List<String>? = null
-                    if (absolutePath.contains("values/styles")) {
+                    if (absolutePath.contains("values/styles") || absolutePath.contains("values/themes")) {
                         path = absolutePath.split("values")
                         FilesRemember.addNewFile(path.first() + "values-night" + path.last())
                     } else {
@@ -59,21 +61,41 @@ class MyAction: AnAction() {
                     val file2 = FilesRemember.getFile()
                     val fileColor = FilesRemember.getFile()
 
-                    LocalFileSystem.getInstance().findFileByPath(FilesRemember.getFile())?.let {
-                        LocalFileSystem.getInstance().findFileByPath(FilesRemember.getFile())?.let { file2 ->
-                            val layout1 = parser.parse(it.inputStream.bufferedReader())
-                            val layout2 = parser.parse(file2.inputStream.bufferedReader())
 
-                            val fileName = file1.getFileName()
+                    showMessage("File1 : $file1")
+                    showMessage("File2 : $file2")
+                    showMessage("FileColor : $fileColor")
+
+                    LocalFileSystem.getInstance().findFileByPath(file1)?.let { f1 ->
+                        LocalFileSystem.getInstance().findFileByPath(file2)?.let { f2 ->
+                            val layout1 = parser.parse(f1.inputStream.bufferedReader())
+                            val layout2 = parser.parse(f2.inputStream.bufferedReader())
+
+                            showMessage("layout1 : $layout1")
+                            showMessage("layout2 : $layout2")
+
+                            val fileName = file1.getFileTheme()
 
                             val result = composer.composeForTheme(layout1, layout2, fileName)
+
+                            result.forEach {
+                                createFile(
+                                    event = event,
+                                    fileName = "${it.key}.kt",
+                                    result = it.value
+                                )
+                            }
                         }
                     }
 
-                    LocalFileSystem.getInstance().findFileByPath(FilesRemember.getFile())?.let {
+                    LocalFileSystem.getInstance().findFileByPath(fileColor)?.let {
                         val layoutColors = parser.parse(it.inputStream.bufferedReader())
+                        val fileName = "Color.kt"
+                        val result = composer.compose(layoutColors, fileName)
+                        createFile(event, fileName, result)
                     }
 
+                    FilesRemember.isStyleFoundFile = false
                 }
             } catch (e: Exception) {
                 showMessage("${e.message} ParcerException")
@@ -99,5 +121,6 @@ class MyAction: AnAction() {
     }
 
     private fun checkIsResource(filePath: String): Boolean =
-        filePath.contains("values/styles") || filePath.contains("values-night/styles")
+        filePath.contains("values/styles") || filePath.contains("values-night/styles") ||
+        filePath.contains("values/themes") || filePath.contains("values-night/themes")
 }

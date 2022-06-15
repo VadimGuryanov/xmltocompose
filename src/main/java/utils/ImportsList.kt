@@ -21,5 +21,5 @@ const val IMPORT_COMPOSE_NAV_ARG: String = "import androidx.navigation.navArgume
 const val IMPORT_COMPOSE_NAV_TYPE: String = "import androidx.navigation.NavType"
 
 
-const val IMPORT_R: String = "import test.plugin.project.R"
-const val IMPORT_PACKAGE: String = "package test.plugin.project.xml2compose"
+const val IMPORT_R: String = "import $DEFAULT_PACKAGE_2.R"
+const val IMPORT_PACKAGE: String = "package $DEFAULT_FILE_PACKAGE"

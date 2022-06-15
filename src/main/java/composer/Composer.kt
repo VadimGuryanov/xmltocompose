@@ -10,10 +10,10 @@ class Composer {
         return visitor.getResult()
     }
 
-    fun composeForTheme(light: Layout, night: Layout, fileName: String): List<String> {
+    fun composeForTheme(light: Layout, night: Layout, fileName: String): Map<String, String> {
         val visitor = ComposingVisitor(fileName)
         light.acceptTheme(night, visitor)
-        return visitor.getResult()
+        return visitor.getResultTheme()
     }
 
     class ComposerException(message: String) : Exception(message)

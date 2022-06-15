@@ -5,11 +5,13 @@ import ast.attributes.ViewAttributes
 import ast.values.LayoutSize
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParser.START_TAG
+import parser.FilesRemember
 import parser.xml.navigation.action
 import parser.xml.navigation.argument
 import parser.xml.navigation.fragment
 import parser.xml.navigation.navigation
 import parser.xml.theme.colorResource
+import parser.xml.theme.itemForStyle
 import parser.xml.theme.resource
 import parser.xml.theme.style
 import parser.xml.values.constraints
@@ -47,7 +49,7 @@ fun XmlPullParser.node(): Node {
 
         //Menu
         "menu" -> menu()
-        "item" -> item()
+        "item" ->  if (!FilesRemember.isStyleFoundFile) item() else itemForStyle()
 
         // Navigation
         "navigation" -> navigation()

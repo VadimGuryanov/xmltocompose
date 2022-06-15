@@ -7,6 +7,8 @@ object FilesRemember {
     val isExistFiles: Boolean
         get() = files.isNotEmpty()
 
+    var isStyleFoundFile = false
+
     fun addNewFile(fileName: String) {
         when {
             fileName.contains("@layout") -> {
